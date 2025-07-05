@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon Nano Scroll Animation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: transparent;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      flex-direction: column;
+      overflow: hidden;
+      color: #00f0ff;
+    }
+
+    .scroll-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease-in-out;
+      position: relative;
+    }
+
+    .scroll-container.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .parchment {
+      background: rgba(0, 0, 0, 0.3);
+      width: 500px;
+      height: 0;
+      overflow: hidden;
+      border-left: 2px solid #00f0ff;
+      border-right: 2px solid #00f0ff;
+      box-shadow: 0 0 20px #00f0ff, inset 0 0 10px #00f0ff;
+      padding: 30px;
+      font-size: 20px;
+      text-align: center;
+      line-height: 1.6;
+      transform-origin: center;
+      position: relative;
+      z-index: 1;
+      backdrop-filter: blur(10px);
+      border-radius: 0 0 50% 50% / 0 0 10% 10%;
+    }
+
+    .parchment.unroll {
+      animation: unroll 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .parchment.roll-up {
+      animation: rollUp 1s ease-in forwards;
+    }
+
+    .roller {
+      width: 520px;
+      height: 20px;
+      background: linear-gradient(90deg, #00f0ff, #0ff, #00f0ff);
+      border-radius: 10px;
+      box-shadow: 0 0 10px #00f0ff;
+    }
+
+    .top-roller, .bottom-roller {
+      margin: 5px 0;
+    }
+
+    @keyframes unroll {
+      0% {
+        height: 0;
+        transform: scaleY(0.2) rotateX(-90deg);
+        opacity: 0;
+        border-radius: 0 0 50% 50% / 0 0 100% 100%;
+      }
+      100% {
+        height: 600px;
+        transform: scaleY(1) rotateX(0deg);
+        opacity: 1;
+        border-radius: 0;
+      }
+    }
+
+    @keyframes rollUp {
+      0% {
+        height: 600px;
+        transform: scaleY(1) rotateX(0deg);
+        opacity: 1;
+        border-radius: 0;
+      }
+      100% {
+        height: 0;
+        transform: scaleY(0.2) rotateX(-90deg);
+        opacity: 0;
+        border-radius: 0 0 50% 50% / 0 0 100% 100%;
+      }
+    }
+
+    .btn {
+      background-color: #000;
+      color: #00f0ff;
+      font-family: 'Cinzel', serif;
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 5px;
+      border: 1px solid #00f0ff;
+      cursor: pointer;
+      border-radius: 5px;
+      box-shadow: 0 0 10px #00f0ff;
+      transition: background-color 0.3s;
+      z-index: 2;
+    }
+
+    .btn:hover {
+      background-color: #0ff1;
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    @media (max-width: 600px) {
+      .parchment {
+        width: 90vw;
+        font-size: 16px;
+        padding: 20px;
+      }
+      .roller {
+        width: 95vw;
+      }
+      .btn {
+        font-size: 16px;
+        padding: 8px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="btn" id="startBtn">Start Scroll</button>
+  <button class="btn" id="closeBtn" style="display: none;">Close Scroll</button>
+
+  <div class="scroll-container" id="scrollContainer">
+    <div class="roller top-roller"></div>
+    <div class="parchment" id="parchment">
+      <p id="scroll-text"></p>
+    </div>
+    <div class="roller bottom-roller"></div>
+
+    <div class="nav-buttons">
+      <button class="btn" id="prevBtn" style="display: none;">Previous</button>
+      <button class="btn" id="nextBtn" style="display: none;">Next</button>
+    </div>
+  </div>
+
+  <script>
+    const pages = [
+      "Welcome to the Nano Realm. This scroll holds encrypted knowledge designed for the neon seekers and techno prophets. Follow the light.",
+      "Each line you read unlocks a hidden layer of your digital destiny. Illuminate the matrix of your mind.",
+      "Beyond this scroll lies a new era of neon wisdom. Embrace the glow and rewrite your fate in flickers of light.",
+      "Every word glows with the power of transformation. Let it illuminate your next decision.",
+      "This is your final page of light. Carry the glow with you into your digital path."
+    ];
+
+    let pageIndex = 0;
+    let charIndex = 0;
+    let typing = false;
+
+    const startBtn = document.getElementById('startBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    const scrollContainer = document.getElementById('scrollContainer');
+    const scrollText = document.getElementById('scroll-text');
+    const parchment = document.getElementById('parchment');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function typeWriter(text) {
+      typing = true;
+      scrollText.innerHTML = '';
+      charIndex = 0;
+
+      function type() {
+        if (charIndex < text.length) {
+          scrollText.innerHTML += text.charAt(charIndex);
+          charIndex++;
+          setTimeout(type, 25);
+        } else {
+          typing = false;
+          updateNavButtons();
+        }
+      }
+
+      type();
+    }
+
+    function updateNavButtons() {
+      prevBtn.style.display = pageIndex > 0 ? 'inline-block' : 'none';
+      nextBtn.style.display = pageIndex < pages.length - 1 ? 'inline-block' : 'none';
+    }
+
+    startBtn.addEventListener('click', () => {
+      startBtn.style.display = 'none';
+      scrollContainer.classList.add('active');
+      parchment.classList.remove('roll-up');
+      parchment.classList.add('unroll');
+      setTimeout(() => {
+        typeWriter(pages[pageIndex]);
+        closeBtn.style.display = 'inline-block';
+      }, 1300);
+    });
+
+    closeBtn.addEventListener('click', () => {
+      parchment.classList.remove('unroll');
+      parchment.classList.add('roll-up');
+      closeBtn.style.display = 'none';
+      scrollText.innerHTML = '';
+      startBtn.style.display = 'inline-block';
+      scrollContainer.classList.remove('active');
+      pageIndex = 0;
+      charIndex = 0;
+      prevBtn.style.display = 'none';
+      nextBtn.style.display = 'none';
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (!typing && pageIndex < pages.length - 1) {
+        pageIndex++;
+        typeWriter(pages[pageIndex]);
+      }
+    });
+
+    prevBtn.addEventListener('click', () => {
+      if (!typing && pageIndex > 0) {
+        pageIndex--;
+        typeWriter(pages[pageIndex]);
+      }
+    });
+  </script>
+
+</body>
+</html>
